@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -41,13 +40,7 @@ func booooooks(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == COLLECTION_ROOT {
 		if r.Method == http.MethodPost {
 			// CREATE
-			var book Book
-			b, _ := io.ReadAll(r.Body)
-			// fmt.Println(string(b))
-			err := json.Unmarshal(b, &book)
-			if err != nil {
-				fmt.Println(err)
-			}
+			book := ReadBodyAsBook(r.Body)
 			book.Id = badkey
 			book.URLid = BookId(fmt.Sprintf("%d", book.Id))
 			badkey++
@@ -88,9 +81,24 @@ func booooooks(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPut, http.MethodPatch:
 			// UPDATE
-			b, _ := io.ReadAll(r.Body)
+			upbook := ReadBodyAsBook(r.Body)
 			if book, ok := library[bookId]; ok {
-				book.Title = string(b)
+				if upbook.Title != "" {
+					book.Title = upbook.Title
+				}
+				if upbook.Author != "" {
+					book.Author = upbook.Author
+				}
+				if upbook.Edition != "" {
+					book.Edition = upbook.Edition
+				}
+				if upbook.ISBN != "" {
+					book.ISBN = upbook.ISBN
+				}
+				if book.Abridged {
+					book.Abridged = upbook.Abridged
+				}
+
 				libraryLock.Lock()
 				library[bookId] = book
 				libraryLock.Unlock()
