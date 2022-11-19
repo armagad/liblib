@@ -1,13 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
-	"fmt"
 	"sync"
-	"io/ioutil"
+	"syscall"
 )
 
 var port = ":4040"
@@ -24,6 +25,7 @@ func main() {
 }
 
 var library map[BookId]Book
+
 type BookId string
 
 var libraryLock sync.RWMutex
@@ -33,28 +35,52 @@ func init() {
 	library = map[BookId]Book{}
 }
 
-
 const COLLECTION_ROOT = "/books/"
 
 func booooooks(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == COLLECTION_ROOT {
 		if r.Method == http.MethodPost {
 			// CREATE
-			b, _ := ioutil.ReadAll(r.Body)
-			book := Book{Title: string(b)}
-			fmt.Println(badkey, book.Title)
+			var book Book
+			b, _ := io.ReadAll(r.Body)
+			// fmt.Println(string(b))
+			err := json.Unmarshal(b, &book)
+			if err != nil {
+				fmt.Println(err)
+			}
+			book.Id = badkey
+			book.URLid = BookId(fmt.Sprintf("%d", book.Id))
+			badkey++
+
+			fmt.Println(book.Id, book.Title)
+
+			// -- db
 			libraryLock.Lock()
-			k := BookId(fmt.Sprintf("%d", badkey))
-			library[k] = book
-			badkey ++
+			library[book.URLid] = book
 			libraryLock.Unlock()
 		} else {
 			// LIST
-			libraryLock.RLock()
-			for id, book := range library {
-				w.Write([]byte(fmt.Sprintf("%s %s\n",id, book.Title)))
+			c := make(chan Book)
+
+			// -- db
+			go func() {
+				libraryLock.RLock()
+				for _, book := range library {
+					c <- book
+				}
+				libraryLock.RUnlock()
+				close(c)
+			}()
+
+			list := []Book{}
+			for book := range c {
+				list = append(list, book)
 			}
-			libraryLock.RUnlock()
+			b, err := json.Marshal(list)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			w.Write(b)
 		}
 
 	} else {
@@ -62,7 +88,7 @@ func booooooks(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPut, http.MethodPatch:
 			// UPDATE
-			b, _ := ioutil.ReadAll(r.Body)
+			b, _ := io.ReadAll(r.Body)
 			if book, ok := library[bookId]; ok {
 				book.Title = string(b)
 				libraryLock.Lock()
@@ -80,7 +106,11 @@ func booooooks(w http.ResponseWriter, r *http.Request) {
 			book, ok := library[bookId]
 			libraryLock.RUnlock()
 			if ok {
-				w.Write([]byte(book.Title))
+				b, err := json.Marshal(book)
+				if err != nil {
+					fmt.Println("error:", err)
+				}
+				w.Write(b)
 			}
 		default:
 		}
@@ -97,6 +127,6 @@ type Book struct {
 
 	CopiesAvailable uint
 
-	Id    uint64
-	URLid BookId
+	Id    uint64 `json:"-"`
+	URLid BookId `json:"-"`
 }
