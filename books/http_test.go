@@ -1,4 +1,4 @@
-package main
+package books
 
 import (
 	"context"
@@ -30,8 +30,9 @@ import (
 
 func TestHandler(t *testing.T) {
 	var UNIT_TEST_ADDR = "127.0.0.1:2020"
+	api := NewApi("books", "", []DecoratorService{})
 	mux := http.NewServeMux()
-	mux.HandleFunc(COLLECTION_ROOT, booooooks)
+	mux.HandleFunc(api.CollectionRoot, api.Handler)
 	var srv http.Server
 	srv.Handler = mux
 
@@ -46,17 +47,17 @@ func TestHandler(t *testing.T) {
 
 	// Create
 	body = strings.NewReader(`{"Title":"The Long and Winding Road","Author":"McCartney-Lennon"}`)
-	_, err = client.Post("http://"+UNIT_TEST_ADDR+COLLECTION_ROOT, "application/json", body)
+	_, err = client.Post("http://"+UNIT_TEST_ADDR+api.CollectionRoot, "application/json", body)
 	if err != nil {
 		panic(err)
 	}
 	// Create
 	body = strings.NewReader(`{"Title":"The Two Towers","Author":"Tolkien","Abridged":false}`)
-	_, err = client.Post("http://"+UNIT_TEST_ADDR+COLLECTION_ROOT, "application/json", body)
+	_, err = client.Post("http://"+UNIT_TEST_ADDR+api.CollectionRoot, "application/json", body)
 	if err != nil {
 		panic(err)
 	}
-	res, err := client.Get("http://" + UNIT_TEST_ADDR + COLLECTION_ROOT)
+	res, err := client.Get("http://" + UNIT_TEST_ADDR + api.CollectionRoot)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +68,7 @@ func TestHandler(t *testing.T) {
 
 	// Update
 	body = strings.NewReader(`{"Title":"The Road","Author":"McCarthy"}`)
-	req, err := http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"1", body)
+	req, err := http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+api.CollectionRoot+"1", body)
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +76,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	res, err = client.Get("http://" + UNIT_TEST_ADDR + COLLECTION_ROOT)
+	res, err = client.Get("http://" + UNIT_TEST_ADDR + api.CollectionRoot)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +89,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	// Get
-	res, err = client.Get("http://" + UNIT_TEST_ADDR + COLLECTION_ROOT + "1")
+	res, err = client.Get("http://" + UNIT_TEST_ADDR + api.CollectionRoot + "1")
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +102,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	// Delete
-	req, err = http.NewRequest(http.MethodDelete, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"1", nil)
+	req, err = http.NewRequest(http.MethodDelete, "http://"+UNIT_TEST_ADDR+api.CollectionRoot+"1", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -109,7 +110,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	res, err = client.Get("http://" + UNIT_TEST_ADDR + COLLECTION_ROOT)
+	res, err = client.Get("http://" + UNIT_TEST_ADDR + api.CollectionRoot)
 	if err != nil {
 		panic(err)
 	}
@@ -122,7 +123,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	// Get
-	res, err = client.Get("http://" + UNIT_TEST_ADDR + COLLECTION_ROOT + "1")
+	res, err = client.Get("http://" + UNIT_TEST_ADDR + api.CollectionRoot + "1")
 	if err != nil {
 		panic(err)
 	}
@@ -138,13 +139,13 @@ func TestHandler(t *testing.T) {
 	}
 
 	// Errors
-	_, err = client.Post("http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"bad_path", "application/json", body)
+	_, err = client.Post("http://"+UNIT_TEST_ADDR+api.CollectionRoot+"bad_path", "application/json", body)
 	if err != nil {
 		panic(err)
 	}
 
 	body = strings.NewReader(`tle":"The Long and Winding Road","Author":"McCartney-Lennon"}`)
-	res, err = client.Post("http://"+UNIT_TEST_ADDR+COLLECTION_ROOT, "application/json", body)
+	res, err = client.Post("http://"+UNIT_TEST_ADDR+api.CollectionRoot, "application/json", body)
 	if err != nil {
 		panic(err)
 	}
@@ -161,7 +162,7 @@ func TestHandler(t *testing.T) {
 
 	// Update
 	body = strings.NewReader(`SCALAR`)
-	req, err = http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"2", body)
+	req, err = http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+api.CollectionRoot+"2", body)
 	if err != nil {
 		panic(err)
 	}
@@ -171,7 +172,7 @@ func TestHandler(t *testing.T) {
 	}
 	// Update
 	body = strings.NewReader(`{"Title":"The Road","Author":"McCarthy"}`)
-	req, err = http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"19236", body)
+	req, err = http.NewRequest(http.MethodPatch, "http://"+UNIT_TEST_ADDR+api.CollectionRoot+"19236", body)
 	if err != nil {
 		panic(err)
 	}
@@ -181,7 +182,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	body = strings.NewReader(`{"Title":"The Road","Author":"McCarthy"}`)
-	req, err = http.NewRequest(http.MethodPut, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT, body)
+	req, err = http.NewRequest(http.MethodPut, "http://"+UNIT_TEST_ADDR+api.CollectionRoot, body)
 	if err != nil {
 		panic(err)
 	}
@@ -190,7 +191,7 @@ func TestHandler(t *testing.T) {
 		panic(err)
 	}
 	// Delete
-	req, err = http.NewRequest(http.MethodDelete, "http://"+UNIT_TEST_ADDR+COLLECTION_ROOT+"14986", nil)
+	req, err = http.NewRequest(http.MethodDelete, "http://"+UNIT_TEST_ADDR+api.CollectionRoot+"14986", nil)
 	if err != nil {
 		panic(err)
 	}
